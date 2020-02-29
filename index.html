@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<meta charset="UTF-8">
+</head>
+<body>
+	<div id="response">																						
+		<div class="panel" v-for="(site, name) in sites" v-bind:key="site.id" @click="update();">
+			<h2>{{ site }}</h2>
+			<question-individual
+			v-for="question in response[name]"
+			v-bind:key="question.question_id"
+			v-bind:q="question"
+			></question-individual>
+		</div>
+	</div>
+<!--Sorry these comments are bad I wanted them to be inline but HTML doesn't really support that. Try reading one line of code for each line of comment here for the entire response div.
+response is our Vue enabled div, see var stack_response
+v-for="(site, name) in sites" iterates where site is a value (one div for each value) and name is a key in the object sites. I don't know what key really does but vue insists we have it. @click is the on-click listener.
+mustache notation, inserts value of var as text.
+<question-individual></question-individual> is a custom vue component, represents one question.
+v-for statement places one of these for each question in stack_response.response
+v-bind creates a property and sets the value based on the javascript value assigned it. In this case, property q takes on the value of 'question' from the for loop.
+-->
+<script>
+function httpGetAsync(theUrl, callback)																					//create http GET request to theUrl and call callback when the information is received. Got this from stack overflow.
+{
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.onreadystatechange = function() { 
+        if (xmlHttp.readyState == 4 && xmlHttp.status == 200)															//if the GET request actually returns something good.
+            callback(xmlHttp.responseText);																				//call "callback" with the response as a parameter.
+    }
+    xmlHttp.open("GET", theUrl, true); // true for asynchronous.
+    xmlHttp.send(null);
+}
+
+var stack_response = new Vue({																							//creates a Vue instance to be accessible from elements with the tag provided through el.
+	el: "#response",
+	data: {																												//data is retrievable from the instance as toplevel variables, meaning you can call update() instead of stack_response.update() or stack_response.data.update() (within the actual instance. Outside of the instance you can retrieve it like stack_response.update();)
+		sites: {																										//the important part here is the actual value, which is the sitename to be retrieved through stackexchange's API.
+			so: 'stackoverflow',																						//left these as examples while I work on being able to add your own programatically. Right now, there is stackoverflow, unix&linux, and database administrator.
+			unix: 'unix',
+			dba: 'dba'
+		},
+		response: {																										//the landing spot for the http JSON response. Has to be initiated beforehand so Vue can render it.
+			so: [], 
+			unix: [],
+			dba: []
+		},
+		update: function() {																							//function to get questions from each site added to this instance.
+			for (let acronym in stack_response.sites) {
+				let site = stack_response.sites[acronym];
+				httpGetAsync(`https://api.stackexchange.com/2.2/questions?order=desc&sort=creation&site=${site}`, function(ret) {stack_response.response[acronym] = JSON.parse(ret).items;});
+			}
+		}
+	}
+})
+
+Vue.component('question-individual', {																					//custom component to be called as a tag in HTML.
+	props: ['q'],																										//a property inserted in the tag when called.
+	template: `
+	<div class="question">
+		<p>
+		<a target="_blank" :href="q.link">{{ q.title }}</a><br>
+			<!--span class="content">{{ q.body.substring(0, 600) }}</span-->
+			{{ new Date(q.creation_date *1000).toLocaleString() }} {{q.tags}} Answered: {{ q.is_answered}}
+		</p>
+	</div>
+	`																													//template is what is inserted for the tag. It must be a singular node (in this case div) with unlimited children. Mustache notation applies here and data is inherited from props.
+})
+
+stack_response.update();
+</script>
+<style>
+	.panel {
+		background-color: #669999;
+		width: 450px;
+		height: 900px;
+		overflow: auto;
+		float: left;
+		margin: 10px;
+		padding: 5px;
+	}
+	a {
+		color: black;
+	}
+</style>
+</body>
+</html>
