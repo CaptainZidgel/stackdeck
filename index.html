@@ -55,7 +55,7 @@ var stack_response = new Vue({																	//creates a Vue instance to be ac
 		],
 		update: function() {																				//function to get questions from each site added to this instance.
 			for (let site of stack_response.sites) {
-				httpGetAsync(templateReq(site[0], site[1]), function(ret) {site[2] = JSON.parse(ret).items;});			//0 = site name, 1 = tags, 2 = space for response
+				httpGetAsync(templateReq(site[0], site[1]), function(ret) {Vue.set(site, 2, JSON.parse(ret).items);});			//0 = site name, 1 = tags, 2 = space for response
 			}
 			console.log("Updated");
 		},
@@ -63,7 +63,8 @@ var stack_response = new Vue({																	//creates a Vue instance to be ac
 	},
 	methods: {
 		add: function(site) {
-			this.sites.push([site, undefined, []])
+			this.sites.push([site, undefined, []]);
+			stack_response.update();
 		}
 	}
 })
