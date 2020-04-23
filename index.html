@@ -6,9 +6,13 @@
 </head>
 <body>
 	<div id="response">	
-		<div><input type="text" v-model="site_to_add"><button type="button" v-on:click="add(site_to_add)">Add new site</button><button type="button" v-on:click="update()">Update</button></div>
-		<div class="panel" v-for="site in sites" v-bind:key="sites.id">
-			<h2>{{ site[0] }}</h2>
+		<div><input type="text" v-model="site_to_add"><button type="button" v-on:click="add(site_to_add)">Add new site</button><button type="button" @click="update()">Update</button></div>
+		<div class="panel" v-for="site in sites" v-bind:key="site[3]">		<!-- Making our key a predefined id instead of index because of mutability or something, i don't know i read it on the internet -->
+			<div class="tag-form" :id="'tf'+site[3]" style="display: block;">
+				<label for="tags">Tags to include</label><input name="tags" type="text" :id="'tt'+site[3]"><button type="button" @click="editTags(site)">Edit 2</button> <!--WHY "EDIT 2"? what is the right flow for this interaction?-->
+				<!-- tf is tag form, tt is tag text -->
+			</div>
+			<h2>{{ site[0] }}</h2><button type="button" @click="toggleForm(site)" class="floatyboy">Edit</button>
 			<question-individual
 			v-for="question in site[2]"
 			v-bind:key="question.question_id"
@@ -28,7 +32,7 @@ v-bind creates a property and sets the value based on the javascript value assig
 function templateReq(site, tags)																//template for http requests
 {
 	let str = `https://api.stackexchange.com/2.2/questions?order=desc&sort=creation&site=${site}`
-	if (tags !== undefined) {
+	if (tags.length) {
 		str = str + "&tagged=" + tags.join(';')
 	}
 	return str
@@ -49,9 +53,9 @@ var stack_response = new Vue({																	//creates a Vue instance to be ac
 	el: "#response",
 	data: {																												//data is retrievable from the instance as toplevel variables, meaning you can call update() instead of stack_response.update() or stack_response.data.update() (within the actual instance. Outside of the instance you can retrieve it like stack_response.update();)
 		sites: [																										
-			['stackoverflow', ['lua', 'love2d'], []],									//
-			['serverfault', undefined, []]														//left these as examples while I work on being able to add your own programatically. Right now, there is stackoverflow, unix&linux, and database administrator.
-																																//[site name (str), tags (array), response (array)]	//site name is the domain or subdomain without stackexchange's root domain. So dba.stackexchange.com -> dba, serverfault.com -> serverfault.
+			['stackoverflow', [], [], 0],
+			['serverfault', [], [], 1]														//left these as examples while I work on being able to add your own programatically. Right now, there is stackoverflow, unix&linux, and database administrator.
+																																//[site name (str), tags (array), response (array), id (type tbd)]	//site name is the domain or subdomain without stackexchange's root domain. So dba.stackexchange.com -> dba, serverfault.com -> serverfault.
 		],
 		update: function() {																				//function to get questions from each site added to this instance.
 			for (let site of stack_response.sites) {
@@ -59,12 +63,24 @@ var stack_response = new Vue({																	//creates a Vue instance to be ac
 			}
 			console.log("Updated");
 		},
-		site_to_add: "webmasters"
+		site_to_add: ""
 	},
 	methods: {
 		add: function(site) {
-			this.sites.push([site, undefined, []]);
+			this.sites.push([site, [], [], this.sites.length]);
 			stack_response.update();
+		},
+		editTags: function(site) {
+			let t = document.getElementById('tt'+site[3]).value;
+			Vue.set(site, 1, t.split(", "));
+		},
+		toggleForm: function(site) {
+			let s = document.getElementById("tf" + site[3]);
+			if (s.style.display === "none") {
+				s.style.display = "block";
+			} else {
+				s.style.display = "none";
+			}
 		}
 	}
 })
@@ -102,8 +118,20 @@ stack_response.update();
 	.answeredfalse {
 		color: red;
 	}
+	input {
+		margin: 5px;
+	}
 	button {
+		margin-left: 5px;
+	}
+	.floatyboy {
+		float: right;
+	}
+	h2 {
 		display: inline;
+	}
+	.tag-form {
+		display: block;
 	}
 </style>
 </body>
