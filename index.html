@@ -6,7 +6,11 @@
 </head>
 <body>
 	<div id="response">	
-		<div class="siteadder"><input type="text" placeholder="Site name" v-model="site_to_add"><button type="button" v-on:click="add(site_to_add)">Add new site</button><button type="button" @click="update()">Update</button><span class="floatyboy">Tip: Create a new panel for each set of tags you wish to track within a single site: Continually changing tracked tags is not going to provide you what you want.</span><div @click="store()">Click me to save cookies!</div><button onclick="eraseCookie('storage')">Click me to clear cookies.</button></div>
+		<div class="siteadder">
+			<input type="text" placeholder="Site name" v-model="site_to_add"><button type="button" v-on:click="add(site_to_add)">Add new site</button><button type="button" @click="update()">Update</button>
+			<span>Tip: Create a new panel for each set of tags you wish to track within a single site: Continually changing tracked tags is not going to provide you what you want.</span>
+			<span class="floatyboy"><button onclick="store()">Click me to save cookies!</button><button onclick="eraseCookie('storage')">Click me to clear cookies.</button></span>
+		</div>
 		<div class="panel" v-for="site in sites" :key="site[3]" :id="'p'+site[3]">		<!-- Making our key a predefined id instead of index because of mutability or something, i don't know i read it on the internet -->
 			<div class="tag-form" :id="'tf'+site[3]" style="display: none;">
 				<label for="tags">Tags to include</label><input name="tags" type="text" placeholder="tags, like, this" :id="'tt'+site[3]"><button type="button" @click="editTags(site)">Apply</button>
@@ -206,6 +210,7 @@ stack_response.update();
 	}
 	.floatyboy {
 		float: right;
+		clear: right;
 	}
 	h2 {
 		display: inline;
