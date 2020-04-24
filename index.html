@@ -6,14 +6,14 @@
 </head>
 <body>
 	<div id="response">	
-		<div class="siteadder"><input type="text" placeholder="Site name" v-model="site_to_add"><button type="button" v-on:click="add(site_to_add)">Add new site</button><button type="button" @click="update()">Update</button></div>
+		<div class="siteadder"><input type="text" placeholder="Site name" v-model="site_to_add"><button type="button" v-on:click="add(site_to_add)">Add new site</button><button type="button" @click="update()">Update</button><span class="floatyboy">Tip: Create a new panel for each set of tags you wish to track within a single site: Continually changing tracked tags is not going to provide you what you want.</span></div>
 		<div class="panel" v-for="site in sites" :key="site[3]" :id="'p'+site[3]">		<!-- Making our key a predefined id instead of index because of mutability or something, i don't know i read it on the internet -->
 			<div class="tag-form" :id="'tf'+site[3]" style="display: none;">
 				<label for="tags">Tags to include</label><input name="tags" type="text" placeholder="tags, like, this" :id="'tt'+site[3]"><button type="button" @click="editTags(site)">Apply</button>
 				<p>You will need to update if you remove a tag but not if you add one.</p>
 				<!-- tf is tag form, tt is tag text -->
 			</div>
-			<h2>{{ site[0] }}</h2><button type="button" @click="toggleForm(site)" class="floatyboy">Edit Tags</button>
+			<h2>{{ site[0] }}</h2><span class="floatyboy"><span @click="removeP(site)" style="font-weight:900;">X</span><button type="button" @click="toggleForm(site)">Edit Tags</button></span>
 			<question-individual
 			v-for="question in site[2]"
 			v-bind:key="question.question_id"
@@ -54,8 +54,8 @@ var stack_response = new Vue({																	//creates a Vue instance to be ac
 	el: "#response",
 	data: {																												//data is retrievable from the instance as toplevel variables, meaning you can call update() instead of stack_response.update() or stack_response.data.update() (within the actual instance. Outside of the instance you can retrieve it like stack_response.update();)
 		sites: [																										
-			['stackoverflow', [], [], 0],
-			['serverfault', [], [], 1]														//left these as examples while I work on being able to add your own programatically. Right now, there is stackoverflow, unix&linux, and database administrator.
+			['stackoverflow', [], [], 1],
+			['serverfault', [], [], 2]														//left these as examples while I work on being able to add your own programatically. Right now, there is stackoverflow, unix&linux, and database administrator.
 																																//[site name (str), tags (array), response (array), id (type tbd)]	//site name is the domain or subdomain without stackexchange's root domain. So dba.stackexchange.com -> dba, serverfault.com -> serverfault.
 		],
 		update: function() {																				//function to get questions from each site added to this instance.
@@ -67,10 +67,9 @@ var stack_response = new Vue({																	//creates a Vue instance to be ac
 		filterTags: function(site) {								//the ultimate goal is to filter down the list of questions to the included tags without making a new HTTP request.
 			let p = document.getElementById('p'+site[3]).getElementsByClassName("question");
 			for (let q of p) {
-				console.log(q);
 				q.tags = q.children[0].children[2].innerText.match(/[^"\s\[\]\\,]+/g);
 				if (site[1].every(val => q.tags.includes(val))) {
-					q.style.display = "block";
+					q.style.display = "inline";
 				} else {
 					q.style.display = "none";
 				}
@@ -79,9 +78,11 @@ var stack_response = new Vue({																	//creates a Vue instance to be ac
 		site_to_add: ""
 	},
 	methods: {														//I'm going to be honest here, I'm not sure why any of these functions here need to be methods and not just functions in the data object.
-		add: function(site) {
-			this.sites.push([site, [], [], this.sites.length]);
-			stack_response.update();
+		add: function(site_) {
+			this.sites.push([site_, [], [], this.sites.length+1]);
+			let site = this.sites[this.sites.length - 1];
+			httpGetAsync(templateReq(site[0], site[1]), function(ret) {Vue.set(site, 2, JSON.parse(ret).items);});
+			stack_response.site_to_add = '';
 		},
 		editTags: function(site) {
 			let t = document.getElementById('tt'+site[3]).value;
@@ -100,6 +101,14 @@ var stack_response = new Vue({																	//creates a Vue instance to be ac
 				s.style.display = "block";
 			} else {
 				s.style.display = "none";
+			}
+		},
+		removeP: function(site) {
+			for (let i = 0; i < stack_response.sites.length; i++) {
+				let s = stack_response.sites[i];
+				if (s[3] === site[3]) {
+					stack_response.sites.splice(i, 1);
+				}
 			}
 		}
 	}
@@ -155,7 +164,7 @@ stack_response.update();
 		display: inline;
 	}
 	.tag-form {
-		display: block;
+		
 	}
 	.siteadder {
 		background-color: #D75D42;
