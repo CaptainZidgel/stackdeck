@@ -7,9 +7,9 @@
 <body>
 	<div id="response">	
 		<div class="siteadder">
-			<input type="text" placeholder="Site name" v-model="site_to_add"><button type="button" v-on:click="add(site_to_add)">Add new site</button><button type="button" @click="update()">Update</button>
+			<input type="text" placeholder="Site name" v-model="site_to_add"><button type="button" v-on:click="add(site_to_add, tags_to_add)">Add new site</button><button type="button" @click="update()">Update</button>
 			<span>Tip: Create a new panel for each set of tags you wish to track within a single site: Continually changing tracked tags is not going to provide you what you want.</span>
-			<span class="floatyboy"><button @click="store()">Click me to save cookies!</button><button onclick="eraseCookie('storage')">Click me to clear cookies.</button></span>
+			<input type="text" placeholder="Tags, like, this" v-model="tags_to_add"><span class="floatyboy"><button @click="store()">Click me to save cookies!</button><button onclick="eraseCookie('storage')">Click me to clear cookies.</button></span>
 		</div>
 		<div class="panel" v-for="site in sites" :key="site[3]" :id="'p'+site[3]">		<!-- Making our key a predefined id instead of index because of mutability or something, i don't know i read it on the internet -->
 			<div class="tag-form" :id="'tf'+site[3]" style="display: none;">
@@ -109,25 +109,33 @@ var stack_response = new Vue({																	//creates a Vue instance to be ac
 				}
 			}
 		},
-		site_to_add: ""
+		site_to_add: "",
+		tags_to_add: "",
 	},
 	methods: {														//I'm going to be honest here, I'm not sure why any of these functions here need to be methods and not just functions in the data object.
-		add: function(site_) {
-			this.sites.push([site_, [], [], this.sites.length+1]);
+		add: function(site_, t) {
+			let tags = [];
+			if (t === "") {																						//if string contains nothing AKA empty string shouldn't be the array!
+				tags = [];
+			} else {																									//if the string contains stuff. I guess.
+				tags = t.split(", ");
+			}
+			this.sites.push([site_, tags, [], this.sites.length+1]);
 			let site = this.sites[this.sites.length - 1];
 			httpGetAsync(templateReq(site[0], site[1]), function(ret) {Vue.set(site, 2, JSON.parse(ret).items);});
 			stack_response.site_to_add = '';
+			stack_response.tags_to_add = '';
 		},
 		editTags: function(site) {
-			let t = document.getElementById('tt'+site[3]).value;
-			if (t === "") {	//empty string shouldn't be the array!
+			let t = document.getElementById('tt'+site[3]).value;			//get tags string
+			if (t === "") {																						//if string contains nothing AKA empty string shouldn't be the array!
 				console.log("Converted empty string to empty array.");
 				Vue.set(site, 1, []);
-			} else {
+			} else {																									//if the string contains stuff. I guess.
 				Vue.set(site, 1, t.split(", "));
 			}
-			this.filterTags(site);
-			this.toggleForm(site);
+			this.filterTags(site);																		//Prune panel questions down to the requested tags.
+			this.toggleForm(site);																		//disable opened form.
 		},
 		toggleForm: function(site) {
 			let s = document.getElementById("tf" + site[3]);
