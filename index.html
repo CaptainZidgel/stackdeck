@@ -9,7 +9,8 @@
 		<div class="siteadder">
 			<input type="text" placeholder="Site name" v-model="site_to_add"><button type="button" v-on:click="add(site_to_add, tags_to_add)">Add new site</button><button type="button" @click="update()">Update</button>
 			<span>Tip: Create a new panel for each set of tags you wish to track within a single site: Continually changing tracked tags is not going to provide you what you want.</span>
-			<input type="text" placeholder="Tags, like, this" v-model="tags_to_add"><span class="floatyboy"><button @click="store()">Click me to save cookies!</button><button onclick="eraseCookie('storage')">Click me to clear cookies.</button></span>
+			<span class="floatyboy"><button @click="store()">Click me to save cookies!</button><button onclick="eraseCookie('storage')">Click me to clear cookies.</button></span><br>
+			<input type="text" placeholder="Tags, like, this" v-model="tags_to_add">
 		</div>
 		<div class="panel" v-for="site in sites" :key="site[3]" :id="'p'+site[3]">		<!-- Making our key a predefined id instead of index because of mutability or something, i don't know i read it on the internet -->
 			<div class="tag-form" :id="'tf'+site[3]" style="display: none;">
