@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/vue@2.6.11"></script>
 	<meta charset="UTF-8">
+	<link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
 </head>
 <body>
 	<div id="response">	
@@ -19,6 +20,7 @@
 				<!-- tf is tag form, tt is tag text -->
 			</div>
 			<h2>{{ site[0] }}</h2><span class="floatyboy"><span @click="removeP(site)" style="font-weight:900;">X</span><button type="button" @click="toggleForm(site)">Edit Tags</button></span>
+			<p v-if="site[1].length > 0">Tagged: {{ site[1].join(", ") }}</p>
 			<question-individual
 			v-for="question in site[2]"
 			v-bind:key="question.question_id"
@@ -38,9 +40,9 @@ v-bind creates a property and sets the value based on the javascript value assig
 /* Cookies https://stackoverflow.com/questions/14573223/set-cookie-and-get-cookie-with-javascript */
 
 function setCookie(name, value, days) {
-	var expires = "";
+	let expires = "";
 	if (days) {
-		var date = new Date();
+		let date = new Date();
 		date.setDate(date.getDate() + days);	//https://stackoverflow.com/questions/14573223/set-cookie-and-get-cookie-with-javascript#comment85358408_24103596
 		expires = "; expires =" + date;
 	}
@@ -48,10 +50,10 @@ function setCookie(name, value, days) {
 }
 
 function getCookie(name) {
-	var nameEQ = name + "=";
-	var ca = document.cookie.split(';');	//cookie array?
+	let nameEQ = name + "=";
+	let ca = document.cookie.split(';');	//cookie array?
 	for (let i = 0; i < ca.length; i++) {
-		var c = ca[i];
+		let c = ca[i];
 		while (c.charAt(0)==' ') c = c.substring(1, c.length);
 		if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
 	}
@@ -64,6 +66,9 @@ function eraseCookie(name) {
 }
 
 /* Stackdeck Stuff */
+
+let request_history = {}
+
 function templateReq(site, tags)																//template for http requests
 {
 	let str = `https://api.stackexchange.com/2.2/questions?order=desc&sort=creation&site=${site}`
@@ -76,13 +81,19 @@ function templateReq(site, tags)																//template for http requests
 
 function httpGetAsync(theUrl, callback)													//create http GET request to theUrl and call callback when the information is received. Got this from stack overflow.
 {
-    var xmlHttp = new XMLHttpRequest();
-    xmlHttp.onreadystatechange = function() { 
-        if (xmlHttp.readyState == 4 && xmlHttp.status == 200)		//if the GET request actually returns something good.
-            callback(xmlHttp.responseText);											//call "callback" with the response as a parameter.
-    }
-    xmlHttp.open("GET", theUrl, true); 													// true for asynchronous.
-    xmlHttp.send(null);
+	if (!request_history[theUrl] || request_history[theUrl] < Date.now() - 15000) {
+		var xmlHttp = new XMLHttpRequest();
+		xmlHttp.onreadystatechange = function() { 
+			if (xmlHttp.readyState == 4 && xmlHttp.status == 200)		//if the GET request actually returns something good.
+				callback(xmlHttp.responseText);											//call "callback" with the response as a parameter.
+		}
+		xmlHttp.open("GET", theUrl, true); 													// true for asynchronous.
+		xmlHttp.send(null);
+		
+		request_history[theUrl] = Date.now();
+	} else {
+		console.log("Denied re-request ", theUrl, " Timediff: ", (Date.now() - request_history[theUrl])/1000);
+	}
 }
 
 var stack_response = new Vue({																	//creates a Vue instance to be accessible from elements with the tag provided through el.
@@ -90,14 +101,13 @@ var stack_response = new Vue({																	//creates a Vue instance to be ac
 	data: {																												//data is retrievable from the instance as toplevel variables, meaning you can call update() instead of stack_response.update() or stack_response.data.update() (within the actual instance. Outside of the instance you can retrieve it like stack_response.update();)
 		sites: [																										
 			['stackoverflow', [], [], 1],
-			['serverfault', [], [], 2]														//left these as examples while I work on being able to add your own programatically. Right now, there is stackoverflow, unix&linux, and database administrator.
+			['serverfault', [], [], 2]
 																																//[site name (str), tags (array), response (array), id (type tbd)]	//site name is the domain or subdomain without stackexchange's root domain. So dba.stackexchange.com -> dba, serverfault.com -> serverfault.
 		],
 		update: function() {																				//function to get questions from each site added to this instance.
 			for (let site of stack_response.sites) {
 				httpGetAsync(templateReq(site[0], site[1]), function(ret) {Vue.set(site, 2, JSON.parse(ret).items);});			//0 = site name, 1 = tags, 2 = space for response
 			}
-			console.log("Updated");
 		},
 		filterTags: function(site) {								//the ultimate goal is to filter down the list of questions to the included tags without making a new HTTP request.
 			let p = document.getElementById('p'+site[3]).getElementsByClassName("question");
@@ -115,22 +125,23 @@ var stack_response = new Vue({																	//creates a Vue instance to be ac
 	},
 	methods: {														//I'm going to be honest here, I'm not sure why any of these functions here need to be methods and not just functions in the data object.
 		add: function(site_, t) {
-			let tags = [];
-			if (t === "") {																						//if string contains nothing AKA empty string shouldn't be the array!
-				tags = [];
-			} else {																									//if the string contains stuff. I guess.
-				tags = t.split(", ");
+			if (this.site_to_add !== "") {
+				let tags = [];
+				if (t === "") {																						//if string contains nothing AKA empty string shouldn't be the array!
+					tags = [];
+				} else {																									//if the string contains stuff. I guess.
+					tags = t.split(", ");
+				}
+				this.sites.push([site_, tags, [], this.sites.length+1]);
+				let site = this.sites[this.sites.length - 1];
+				httpGetAsync(templateReq(site[0], site[1]), function(ret) {Vue.set(site, 2, JSON.parse(ret).items);});
+				this.site_to_add = '';
+				this.tags_to_add = '';
 			}
-			this.sites.push([site_, tags, [], this.sites.length+1]);
-			let site = this.sites[this.sites.length - 1];
-			httpGetAsync(templateReq(site[0], site[1]), function(ret) {Vue.set(site, 2, JSON.parse(ret).items);});
-			stack_response.site_to_add = '';
-			stack_response.tags_to_add = '';
 		},
 		editTags: function(site) {
 			let t = document.getElementById('tt'+site[3]).value;			//get tags string
 			if (t === "") {																						//if string contains nothing AKA empty string shouldn't be the array!
-				console.log("Converted empty string to empty array.");
 				Vue.set(site, 1, []);
 			} else {																									//if the string contains stuff. I guess.
 				Vue.set(site, 1, t.split(", "));
@@ -224,6 +235,7 @@ stack_response.update();
 	}
 	h2 {
 		display: inline;
+		font-family: 'Roboto', sans-serif;
 	}
 	.tag-form {
 		
