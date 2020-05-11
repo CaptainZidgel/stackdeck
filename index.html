@@ -188,7 +188,11 @@ var stack_response = new Vue({																	//creates a Vue instance to be ac
 			let s = JSON.parse(getCookie("storage"))
 			if (s !== null) {
 				this.sites = JSON.parse(getCookie("storage"));
-				console.log("Restored from cookies:", JSON.parse(getCookie("storage")));
+				rolling_id = 0;
+				for (let s of this.sites) {
+					s[3] = rolling_id++;
+				}
+				console.log("Restored from cookies:", this.sites);
 			} else {
 				console.log("Error: No cookies?")
 			}
