@@ -56,7 +56,8 @@ function setCookie(name, value, days) {
 		date.setDate(date.getDate() + days);	//https://stackoverflow.com/questions/14573223/set-cookie-and-get-cookie-with-javascript#comment85358408_24103596
 		expires = "; expires =" + date;
 	}
-	document.cookie = name + "=" + (value || "") + expires + "; path=/";
+	document.cookie = name + "=" + (value || "") + expires + "; path=/; Secure; SameSite=Strict";
+	//The secure/samesite attributes aren't "really" necessary because these cookies are not vulnerable to CSRF, there's no user auth. However, they are "actually" necessary because firefox tells me it will reject the cookie without such attributes.
 }
 
 function getCookie(name) {
