@@ -1,0 +1,46 @@
+body {
+	background-color: #F18C61;
+	color: #262626
+}
+.panel {
+	background-color: #DBCCC0;
+	width: 345px;
+	height: 875px;
+	overflow: auto;
+	float: left;
+	margin: 10px;
+	padding: 5px;
+}
+a {
+	color: #262626;
+}
+.answeredtrue {
+	color: darkgreen;
+}
+.answeredfalse {
+	color: red;
+}
+input {
+	margin: 5px;
+}
+button {
+	margin-left: 5px;
+}
+.fright {
+	float: right;
+	clear: right;
+}
+.fleft {
+	float: left;
+	clear: left;
+}
+h2 {
+	display: inline;
+	font-family: 'Roboto', sans-serif;
+}
+.siteadder {
+	background-color: #D75D42;
+	margin: -10px;
+	padding: 15px;
+	overflow: auto;
+}

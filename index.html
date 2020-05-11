@@ -4,14 +4,24 @@
 	<script src="https://cdn.jsdelivr.net/npm/vue@2.6.11"></script>
 	<meta charset="UTF-8">
 	<link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+	<link rel="stylesheet" type="text/css" href="stackdeck.css">
 </head>
 <body>
 	<div id="response">	
 		<div class="siteadder">
-			<input type="text" placeholder="Site name" v-model="site_to_add"><button type="button" v-on:click="add(site_to_add, tags_to_add)">Add new site</button><button type="button" @click="update()">Update</button>
+			<span class="fleft">
+				<input class="fleft" type="text" placeholder="Site name" v-model="site_to_add"><input type="text" placeholder="Tags, like, this" v-model="tags_to_add">
+				<span class="fleft">
+					<button type="button" v-on:click="add(site_to_add, tags_to_add)">Add new site</button>
+					<button type="button" @click="update()">Update</button>
+				</span>
+			</span>
 			<span>Tip: Create a new panel for each set of tags you wish to track within a single site: Continually changing tracked tags is not going to provide you what you want.</span>
-			<span class="floatyboy"><button @click="store()">Click me to save cookies!</button><button onclick="eraseCookie('storage')">Click me to clear cookies.</button></span><br>
-			<input type="text" placeholder="Tags, like, this" v-model="tags_to_add">
+			<span class="fright">
+				<button class="fright" @click="store()">Save Cookies</button>
+				<button class="fright" onclick="eraseCookie('storage')">Clear Cookies</button>
+				<button class="fright" @click="restore()">Load Cookies</button>
+			</span><br>
 		</div>
 		<div class="panel" v-for="site in sites" :key="site[3]" :id="'p'+site[3]">		<!-- Making our key a predefined id instead of index because of mutability or something, i don't know i read it on the internet -->
 			<div class="tag-form" :id="'tf'+site[3]" style="display: none;">
@@ -19,7 +29,7 @@
 				<p>You will need to update if you remove a tag but not if you add one.</p>
 				<!-- tf is tag form, tt is tag text -->
 			</div>
-			<h2>{{ site[0] }}</h2><span class="floatyboy"><span @click="removeP(site)" style="font-weight:900;">X</span><button type="button" @click="toggleForm(site)">Edit Tags</button></span>
+			<h2>{{ site[0] }}</h2><span class="fright"><span @click="removeP(site)" style="font-weight:900;">X</span><button type="button" @click="toggleForm(site)">Edit Tags</button></span>
 			<p v-if="site[1].length > 0">Tagged: {{ site[1].join(", ") }}</p>
 			<question-individual
 			v-for="question in site[2]"
@@ -68,6 +78,7 @@ function eraseCookie(name) {
 /* Stackdeck Stuff */
 
 let request_history = {}
+let rolling_id = 0
 
 function templateReq(site, tags)																//template for http requests
 {
@@ -100,8 +111,8 @@ var stack_response = new Vue({																	//creates a Vue instance to be ac
 	el: "#response",
 	data: {																												//data is retrievable from the instance as toplevel variables, meaning you can call update() instead of stack_response.update() or stack_response.data.update() (within the actual instance. Outside of the instance you can retrieve it like stack_response.update();)
 		sites: [																										
-			['stackoverflow', [], [], 1],
-			['serverfault', [], [], 2]
+			['stackoverflow', [], [], rolling_id++],
+			['serverfault', [], [], rolling_id++]
 																																//[site name (str), tags (array), response (array), id (type tbd)]	//site name is the domain or subdomain without stackexchange's root domain. So dba.stackexchange.com -> dba, serverfault.com -> serverfault.
 		],
 		update: function() {																				//function to get questions from each site added to this instance.
@@ -132,7 +143,7 @@ var stack_response = new Vue({																	//creates a Vue instance to be ac
 				} else {																									//if the string contains stuff. I guess.
 					tags = t.split(", ");
 				}
-				this.sites.push([site_, tags, [], this.sites.length+1]);
+				this.sites.push([site_, tags, [], rolling_id++]);
 				let site = this.sites[this.sites.length - 1];
 				httpGetAsync(templateReq(site[0], site[1]), function(ret) {Vue.set(site, 2, JSON.parse(ret).items);});
 				this.site_to_add = '';
@@ -140,7 +151,7 @@ var stack_response = new Vue({																	//creates a Vue instance to be ac
 			}
 		},
 		editTags: function(site) {
-			let t = document.getElementById('tt'+site[3]).value;			//get tags string
+			let t = document.getElementById('tt'+site[3]).value;			//get tags string from the tag FORM related to the panel id (site[3])
 			if (t === "") {																						//if string contains nothing AKA empty string shouldn't be the array!
 				Vue.set(site, 1, []);
 			} else {																									//if the string contains stuff. I guess.
@@ -174,8 +185,13 @@ var stack_response = new Vue({																	//creates a Vue instance to be ac
 			console.log("Saved to cookies:", stuff);
 		},
 		restore: function() { //restore storage
-			this.sites = JSON.parse(getCookie("storage"));
-			console.log("Restored from cookies:", JSON.parse(getCookie("storage")));
+			let s = JSON.parse(getCookie("storage"))
+			if (s !== null) {
+				this.sites = JSON.parse(getCookie("storage"));
+				console.log("Restored from cookies:", JSON.parse(getCookie("storage")));
+			} else {
+				console.log("Error: No cookies?")
+			}
 		}
 	}
 })
@@ -200,52 +216,5 @@ if (getCookie("storage") !== null) {
 }
 stack_response.update();
 </script>
-<style>
-	body {
-		background-color: #F18C61;
-		color: #262626
-	}
-	.panel {
-		background-color: #DBCCC0;
-		width: 345px;
-		height: 875px;
-		overflow: auto;
-		float: left;
-		margin: 10px;
-		padding: 5px;
-	}
-	a {
-		color: #262626;
-	}
-	.answeredtrue {
-		color: darkgreen;
-	}
-	.answeredfalse {
-		color: red;
-	}
-	input {
-		margin: 5px;
-	}
-	button {
-		margin-left: 5px;
-	}
-	.floatyboy {
-		float: right;
-		clear: right;
-	}
-	h2 {
-		display: inline;
-		font-family: 'Roboto', sans-serif;
-	}
-	.tag-form {
-		
-	}
-	.siteadder {
-		background-color: #D75D42;
-		margin: -10px;
-		padding: 15px;
-		overflow: auto;
-	}
-</style>
 </body>
 </html>
