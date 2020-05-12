@@ -8,7 +8,7 @@
 </head>
 <body>
 	<div id="response">	
-		<div class="siteadder">
+		<div class="banner">
 			<span class="fleft">
 				<input class="fleft" type="text" placeholder="Site name" v-model="site_to_add"><input type="text" placeholder="Tags, like, this" v-model="tags_to_add">
 				<span class="fleft">
@@ -20,7 +20,6 @@
 			<span class="fright">
 				<button class="fright" @click="store()">Save Cookies</button>
 				<button class="fright" onclick="eraseCookie('storage')">Clear Cookies</button>
-				<button class="fright" @click="restore()">Load Cookies</button>
 			</span><br>
 		</div>
 		<div class="panel" v-for="site in sites" :key="site[3]" :id="'p'+site[3]">		<!-- Making our key a predefined id instead of index because of mutability or something, i don't know i read it on the internet -->
@@ -46,7 +45,35 @@ mustache notation, inserts value of var as text.
 v-for statement places one of these for each question in stack_response.response
 v-bind creates a property and sets the value based on the javascript value assigned it. In this case, property q takes on the value of 'question' from the for loop.
 -->
+	<div class="banner" id="footer">
+		Thanks for using Stackdeck. Here are some advanced/technical options.
+		<button @click="restore()">Load Cookies from browser</button>
+		<button onclick="_export()">Export panels as JSON string</button>
+		<button onclick="_import()">Import panels from JSON string</button>
+		<p id="jsonstr"></p>
+	</div>
 <script>
+/* JSON *port */
+function _export() {
+	let stuff = JSON.parse(JSON.stringify(stack_response.sites)); //copy info
+		for (let s of stuff) {
+			s[2] = []; //clear out data -- we dont want to store a bajillion questions!
+	}
+
+	let s = JSON.stringify(stuff);
+	let element = document.getElementById("jsonstr");
+	element.textContent = s;
+}
+
+function _import() {
+	let j = prompt("Paste your JSON string");
+	stack_response.sites = JSON.parse(j);
+	rolling_id = 0;
+	for (let s of stack_response.sites) {
+			s[3] = rolling_id++;
+	}
+}
+
 /* Cookies https://stackoverflow.com/questions/14573223/set-cookie-and-get-cookie-with-javascript */
 
 function setCookie(name, value, days) {
@@ -180,7 +207,7 @@ var stack_response = new Vue({																	//creates a Vue instance to be ac
 			}
 		},
 		store: function() {	//purify tables of response data, then save.
-			let stuff = this.sites;
+			let stuff = JSON.parse(JSON.stringify(this.sites));	//copy data
 			for (let s of stuff) {
 				s[2] = []; //clear out data -- we dont want to store a bajillion questions!
 			}
