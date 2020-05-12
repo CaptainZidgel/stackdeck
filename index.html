@@ -22,13 +22,19 @@
 				<button class="fright" onclick="eraseCookie('storage')">Clear Cookies</button>
 			</span><br>
 		</div>
-		<div class="panel" v-for="site in sites" :key="site[3]" :id="'p'+site[3]">		<!-- Making our key a predefined id instead of index because of mutability or something, i don't know i read it on the internet -->
+		<div class="panel" v-for="site in sites" :key="site[3]" :id="'p'+site[3]">	<!-- Making our key a predefined id instead of index because of mutability or something, i don't know i read it on the internet -->
 			<div class="tag-form" :id="'tf'+site[3]" style="display: none;">
-				<label for="tags">Tags to include</label><input name="tags" type="text" placeholder="tags, like, this" :id="'tt'+site[3]"><button type="button" @click="editTags(site)">Apply</button>
-				<p>You will need to update if you remove a tag but not if you add one.</p>
+				<span class="arrow left" @click="arrMove(site[3], site[3]-1)">&#8249;</span><span class="arrow right" @click="arrMove(site[3], site[3]+1)">&#8250;</span>
+				<label for="tags" class="center">Tags to include</label>
+				<input name="tags" type="text" placeholder="tags, like, this" :id="'tt'+site[3]" class="taginput">
+				<button type="button" @click="editTags(site)" class="tagapply">Apply</button>
 				<!-- tf is tag form, tt is tag text -->
 			</div>
-			<h2>{{ site[0] }}</h2><span class="fright"><span @click="removeP(site)" style="font-weight:900;">X</span><button type="button" @click="toggleForm(site)">Edit Tags</button></span>
+			<h2>{{ site[0] }}</h2>
+			<span class="fright">
+				<span @click="removeP(site)" style="font-weight:900;">X</span>
+				<button type="button" @click="toggleForm(site)">Edit</button>
+			</span>
 			<p v-if="site[1].length > 0">Tagged: {{ site[1].join(", ") }}</p>
 			<question-individual
 			v-for="question in site[2]"
@@ -75,7 +81,6 @@ function _import() {
 }
 
 /* Cookies https://stackoverflow.com/questions/14573223/set-cookie-and-get-cookie-with-javascript */
-
 function setCookie(name, value, days) {
 	let expires = "";
 	if (days) {
@@ -106,7 +111,6 @@ function eraseCookie(name) {
 }
 
 /* Stackdeck Stuff */
-
 let request_history = {}
 let rolling_id = 0
 
@@ -134,6 +138,24 @@ function httpGetAsync(theUrl, callback)													//create http GET request to
 		request_history[theUrl] = Date.now();
 	} else {
 		console.log("Denied re-request ", theUrl, " Timediff: ", (Date.now() - request_history[theUrl])/1000);
+	}
+}
+
+function arrMove(oldIndex, newIndex)
+{
+	let arr = stack_response.sites;
+	let _s = arr[newIndex];
+	if (_s != null && _s != undefined) {
+		let _i = _s[3];
+		Vue.set(arr[newIndex], 3, arr[oldIndex][3]);
+		Vue.set(arr[oldIndex], 3, _i);
+		Vue.set(arr, newIndex, arr[oldIndex]);
+		Vue.set(arr, oldIndex, _s);
+
+		stack_response.toggleForm(arr[oldIndex]);
+		stack_response.toggleForm(arr[newIndex]);
+	} else {
+		console.log("Can't do this move");
 	}
 }
 

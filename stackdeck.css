@@ -45,3 +45,26 @@ h2 {
 	overflow: auto;
 	width: 100%;
 }
+.arrow {
+	font-size: 45px;
+	display: block;
+	background-color: #b5afaa;
+}
+.arrow.left {
+	float: left;
+}
+.arrow.right {
+	float: right;
+}
+.center {
+	text-align: center;
+	display: block;
+}
+.taginput {
+	width: 55%;
+	margin: 5px;
+}
+.tagapply {
+	margin: 0px;
+}
+
